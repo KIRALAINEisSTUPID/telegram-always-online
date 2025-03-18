@@ -20,7 +20,7 @@ A Python tool to keep your Telegram account online 24/7. Works on Linux and Term
 ### From GitHub
 
 # Clone the repository
-git clone https://github.com/yourusername/telegram-always-online.git
+git clone https://github.com/KIRALAINEisSTUPID/telegram-always-online
 cd telegram-always-online
 
 # Install the package
@@ -32,7 +32,7 @@ pkg update
 pkg install python git
 
 # Clone the repository
-git clone https://github.com/yourusername/telegram-always-online.git
+git clone https://github.com/KIRALAINEisSTUPID/telegram-always-online
 cd telegram-always-online
 
 # Install the package
