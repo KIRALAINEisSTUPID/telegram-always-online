@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""
+Command-line script for Telegram Always Online
+"""
+
+import os
+import sys
+import argparse
+import asyncio
+import logging
+import subprocess
+from pathlib import Path
+
+# Add parent directory to path for local development
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(file)))
+sys.path.append(parent_dir)
+
+from telegram_always_online.main import TelegramOnline
+from telegram_always_online.auth import setup_authentication
+from telegram_always_online.config import load_config, update_config
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(name)
+
+def start_daemon():
+    """Start the script as a daemon process (detached from terminal)"""
+    script_path = os.path.abspath(file)
+    
+    # Use nohup for Linux/Termux to run in background
+    try:
+        subprocess.Popen(
+            ["nohup", "python3", script_path, "--run", "&"],
+            stdout=open(os.devnull, 'w'),
+            stderr=open(os.devnull, 'w'),
+            start_new_session=True
+        )
+        print("Started Telegram Always Online in background mode")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to start daemon: {e}")
+        return False
+
+async def main():
+    """Main entry point with argument parsing"""
+    parser = argparse.ArgumentParser(description="Keep your Telegram account online 24/7")
+    
+    # Add command-line arguments
+    parser.add_argument("--setup", action="store_true", help="Run first-time setup")
+    parser.add_argument("--run", action="store_true", help="Run the online service")
+    parser.add_argument("--daemon", action="store_true", help="Run as background service")
+    parser.add_argument("--interval", type=int, help="Update interval in seconds (default: 300)")
+    
+    args = parser.parse_args()
+    
+    # Handle different command modes
+    if args.setup:
+        await setup_authentication()
+        sys.exit(0)
+        
+    elif args.interval:
+        if update_config('update_interval', args.interval):
+            print(f"Update interval set to {args.interval} seconds")
+        else:
+            print("Failed to update interval")
+        sys.exit(0)
+        
+    elif args.daemon:
+        if start_daemon():
+            sys.exit(0)
+        else:
+            sys.exit(1)
+            
+    elif args.run:
+        # Start the main service
+        telegram = TelegramOnline()
+        if await telegram.connect():
+            await telegram.start_online_loop()
+        else:
+            sys.exit(1)
+            
+    else:
+        # No arguments provided, show help
+        parser.print_help()
+        
+if name == "main":
+    asyncio.run(main())
